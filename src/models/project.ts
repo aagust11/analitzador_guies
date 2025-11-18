@@ -39,6 +39,14 @@ export interface Highlight {
   endOffset?: number;
   comment?: string;
   createdAt: string;
+  rects?: HighlightRect[];
+}
+
+export interface HighlightRect {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
 }
 
 export interface Tag {
@@ -71,6 +79,8 @@ export interface AnalysisSheet {
   guideId: string;
   dimensionId: string;
   notes: AnalysisSheetNotes;
+  customTitle?: string;
+  isCustomDimension?: boolean;
 }
 
 export interface ProjectState {
