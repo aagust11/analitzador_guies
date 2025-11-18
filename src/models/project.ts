@@ -49,13 +49,22 @@ export interface HighlightRect {
   height: number;
 }
 
+export interface TagLink {
+  id: string;
+  highlightId?: string;
+  pageNumber?: number;
+  position?: { x: number; y: number };
+  comment?: string;
+  createdAt: string;
+}
+
 export interface Tag {
   id: string;
   guideId: string;
-  dimensionId?: string;
+  dimensionId: string;
   label: string;
-  color: string;
-  linkedHighlightIds: string[];
+  color?: string;
+  links: TagLink[];
   createdAt: string;
 }
 

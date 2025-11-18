@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { AnalysisDimensionDefinition, AnalysisSheet, Highlight } from '../../models';
+import { AnalysisDimensionDefinition, AnalysisSheet, Highlight, Tag } from '../../models';
 import { DimensionPanel } from './DimensionPanel';
 
 type DimensionNoteField = 'descriptive' | 'quotations' | 'interpretive';
@@ -9,8 +9,10 @@ interface AnalysisSheetPanelProps {
   sheetEntries: AnalysisSheet[];
   dimensionDefinitions: AnalysisDimensionDefinition[];
   highlights: Highlight[];
+  tags: Tag[];
   onChangeNotes: (dimensionId: string, field: DimensionNoteField, value: string) => void;
   onAddCustomDimension: (title: string) => void;
+  onCreateTag: (dimensionId: string, label: string, color?: string) => void;
   onSelectHighlight: (highlightId: string) => void;
   activeHighlightId?: string | null;
 }
@@ -20,8 +22,10 @@ export function AnalysisSheetPanel({
   sheetEntries,
   dimensionDefinitions,
   highlights,
+  tags,
   onChangeNotes,
   onAddCustomDimension,
+  onCreateTag,
   onSelectHighlight,
   activeHighlightId,
 }: AnalysisSheetPanelProps) {
@@ -64,10 +68,12 @@ export function AnalysisSheetPanel({
               defaultTitle={definition?.title}
               description={definition?.description}
               highlights={dimensionHighlights}
+              tags={tags.filter((tag) => tag.dimensionId === entry.dimensionId)}
               isCollapsed={Boolean(collapsedMap[entry.dimensionId])}
               onToggleCollapse={handleToggle}
               onChange={onChangeNotes}
               onSelectHighlight={onSelectHighlight}
+              onCreateTag={onCreateTag}
               activeHighlightId={activeHighlightId}
             />
           );
