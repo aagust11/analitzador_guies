@@ -155,7 +155,7 @@ export function ComparativeGridPage() {
   };
 
   const handleNavigateToCell = (guideId: string, dimensionId: string) => {
-    navigate(`/analysis/${guideId}?dimension=${dimensionId}`);
+    navigate(`../analysis/${guideId}?dimension=${dimensionId}`);
   };
 
   const downloadBlob = (content: string, filename: string, mime: string) => {
