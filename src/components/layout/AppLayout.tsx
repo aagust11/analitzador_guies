@@ -15,7 +15,19 @@ const PAGE_TITLES: Record<string, { title: string; subtitle?: string }> = {
 
 export function AppLayout() {
   const location = useLocation();
-  const meta = PAGE_TITLES[location.pathname] ?? { title: 'Analitzador de guies' };
+  const baseFromEnv = import.meta.env.BASE_URL ?? '/';
+  const normalizedBase = baseFromEnv === '/' ? '' : baseFromEnv.replace(/\/$/, '');
+  let relativePath = location.pathname;
+  if (normalizedBase && relativePath.startsWith(normalizedBase)) {
+    relativePath = relativePath.slice(normalizedBase.length) || '/';
+  }
+  const normalizedPath =
+    relativePath === '' ? '/' : relativePath.startsWith('/') ? relativePath : `/${relativePath}`;
+
+  const metaKey = Object.keys(PAGE_TITLES)
+    .sort((a, b) => b.length - a.length)
+    .find((path) => normalizedPath === path || normalizedPath.startsWith(`${path}/`));
+  const meta = metaKey ? PAGE_TITLES[metaKey] : { title: 'Analitzador de guies' };
 
   return (
     <div className="app-shell">

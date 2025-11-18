@@ -55,7 +55,7 @@ export function HomePage() {
   };
 
   const openGuide = (guideId: string) => {
-    navigate(`/analysis/${guideId}`);
+    navigate(`analysis/${guideId}`);
   };
 
   return (
