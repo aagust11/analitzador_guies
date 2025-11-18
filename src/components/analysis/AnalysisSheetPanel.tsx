@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { AnalysisDimensionDefinition, AnalysisSheet, Highlight, Tag } from '../../models';
 import { DimensionPanel } from './DimensionPanel';
 
@@ -15,6 +15,8 @@ interface AnalysisSheetPanelProps {
   onCreateTag: (dimensionId: string, label: string, color?: string) => void;
   onSelectHighlight: (highlightId: string) => void;
   activeHighlightId?: string | null;
+  focusedDimensionId?: string | null;
+  onFocusDimensionConsumed?: (dimensionId: string | null) => void;
 }
 
 export function AnalysisSheetPanel({
@@ -28,8 +30,12 @@ export function AnalysisSheetPanel({
   onCreateTag,
   onSelectHighlight,
   activeHighlightId,
+  focusedDimensionId,
+  onFocusDimensionConsumed,
 }: AnalysisSheetPanelProps) {
   const [collapsedMap, setCollapsedMap] = useState<Record<string, boolean>>({});
+  const panelRefs = useRef<Record<string, HTMLElement | null>>({});
+  const [flashDimensionId, setFlashDimensionId] = useState<string | null>(null);
 
   const handleToggle = (dimensionId: string) => {
     setCollapsedMap((prev) => ({ ...prev, [dimensionId]: !prev[dimensionId] }));
@@ -45,6 +51,26 @@ export function AnalysisSheetPanel({
 
   const resolveDefinition = (dimensionId: string): AnalysisDimensionDefinition | undefined =>
     dimensionDefinitions.find((dimension) => dimension.id === dimensionId);
+
+  useEffect(() => {
+    if (!focusedDimensionId) {
+      return;
+    }
+    setCollapsedMap((prev) => ({ ...prev, [focusedDimensionId]: false }));
+    const node = panelRefs.current[focusedDimensionId];
+    if (node) {
+      window.requestAnimationFrame(() => {
+        node.scrollIntoView({ behavior: 'smooth', block: 'start', inline: 'nearest' });
+      });
+      setFlashDimensionId(focusedDimensionId);
+      const timeout = window.setTimeout(() => {
+        setFlashDimensionId((current) => (current === focusedDimensionId ? null : current));
+        onFocusDimensionConsumed?.(focusedDimensionId);
+      }, 1800);
+      return () => window.clearTimeout(timeout);
+    }
+    onFocusDimensionConsumed?.(focusedDimensionId);
+  }, [focusedDimensionId, onFocusDimensionConsumed]);
 
   return (
     <div className="analysis-sheet-panel">
@@ -75,6 +101,10 @@ export function AnalysisSheetPanel({
               onSelectHighlight={onSelectHighlight}
               onCreateTag={onCreateTag}
               activeHighlightId={activeHighlightId}
+              isFocusTarget={flashDimensionId === entry.dimensionId}
+              ref={(node) => {
+                panelRefs.current[entry.dimensionId] = node;
+              }}
             />
           );
         })}

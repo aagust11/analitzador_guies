@@ -25,3 +25,46 @@
   color: #6b7280;
   font-size: 0.85rem;
 }
+
+.topbar__autosave {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-weight: 600;
+  color: #475569;
+}
+
+.topbar__autosave[data-state='saving'] {
+  color: #2563eb;
+}
+
+.topbar__autosave[data-state='pending'] {
+  color: #d97706;
+}
+
+.topbar__autosave-indicator {
+  width: 0.55rem;
+  height: 0.55rem;
+  border-radius: 999px;
+  background: currentColor;
+  display: inline-block;
+}
+
+.topbar__autosave[data-state='saving'] .topbar__autosave-indicator {
+  animation: topbarPulse 1.4s infinite;
+}
+
+@keyframes topbarPulse {
+  0% {
+    opacity: 0.4;
+    transform: scale(0.8);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.15);
+  }
+  100% {
+    opacity: 0.4;
+    transform: scale(0.8);
+  }
+}

@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useParams, useSearchParams } from 'react-router-dom';
 import {
   AnalysisSheet,
   AnalysisSheetNotes,
@@ -51,16 +51,36 @@ function generateId(prefix: string) {
 
 export function AnalysisWorkspacePage() {
   const { guideId } = useParams();
+  const [searchParams] = useSearchParams();
   const { projectState, storageService, updateProjectState } = useStorage();
   const [fileUrl, setFileUrl] = useState<string | null>(null);
   const [sheetDraft, setSheetDraft] = useState<AnalysisSheet[]>([]);
   const [activeHighlightId, setActiveHighlightId] = useState<string | null>(null);
+  const [pendingFocusDimension, setPendingFocusDimension] = useState<string | null>(null);
+  const lastFocusedDimensionRef = useRef<string | null>(null);
+
+  const dimensionFromQuery = searchParams.get('dimension');
 
   const guide = projectState.guides.find((item) => item.id === guideId);
 
   useEffect(() => {
     setActiveHighlightId(null);
   }, [guideId]);
+
+  useEffect(() => {
+    lastFocusedDimensionRef.current = null;
+  }, [guideId]);
+
+  useEffect(() => {
+    if (dimensionFromQuery && dimensionFromQuery !== lastFocusedDimensionRef.current) {
+      setPendingFocusDimension(dimensionFromQuery);
+    }
+  }, [dimensionFromQuery]);
+
+  const handleFocusDimensionConsumed = useCallback((dimensionId: string | null) => {
+    lastFocusedDimensionRef.current = dimensionId;
+    setPendingFocusDimension(null);
+  }, []);
 
   useEffect(() => {
     let revokeUrl: string | null = null;
@@ -410,6 +430,8 @@ export function AnalysisWorkspacePage() {
           onCreateTag={handleCreateTag}
           onSelectHighlight={handleSelectHighlight}
           activeHighlightId={activeHighlightId}
+          focusedDimensionId={pendingFocusDimension}
+          onFocusDimensionConsumed={handleFocusDimensionConsumed}
         />
       </div>
     </section>
