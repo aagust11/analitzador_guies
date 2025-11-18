@@ -11,7 +11,7 @@ export const appRouter = createBrowserRouter([
     element: <AppLayout />, 
     children: [
       { index: true, element: <HomePage /> },
-      { path: 'analysis', element: <AnalysisWorkspacePage /> },
+      { path: 'analysis/:guideId', element: <AnalysisWorkspacePage /> },
       { path: 'comparative', element: <ComparativeGridPage /> },
       { path: 'settings', element: <SettingsPage /> },
     ],

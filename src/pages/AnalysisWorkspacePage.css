@@ -20,6 +20,20 @@
   border: 2px dashed #c7d2fe;
 }
 
+.workspace__meta {
+  color: #475569;
+  font-size: 0.9rem;
+  margin-bottom: 1rem;
+}
+
+.workspace__preview {
+  width: 100%;
+  height: 70vh;
+  border: none;
+  border-radius: 0.5rem;
+  background: #0f172a;
+}
+
 @media (max-width: 1024px) {
   .workspace {
     grid-template-columns: 1fr;
