@@ -380,6 +380,12 @@
   border-radius: 0.75rem;
   padding: 1rem;
   background: #ffffff;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.dimension-panel[data-focused='true'] {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
 }
 
 .dimension-panel__header {

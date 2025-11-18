@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { forwardRef, useMemo, useState } from 'react';
 import { AnalysisSheet, Highlight, Tag } from '../../models';
 
 type DimensionNoteField = 'descriptive' | 'quotations' | 'interpretive';
@@ -15,21 +15,26 @@ interface DimensionPanelProps {
   onSelectHighlight: (highlightId: string) => void;
   onCreateTag: (dimensionId: string, label: string, color?: string) => void;
   activeHighlightId?: string | null;
+  isFocusTarget?: boolean;
 }
 
-export function DimensionPanel({
-  entry,
-  defaultTitle,
-  description,
-  highlights,
-  tags,
-  isCollapsed,
-  onToggleCollapse,
-  onChange,
-  onSelectHighlight,
-  onCreateTag,
-  activeHighlightId,
-}: DimensionPanelProps) {
+export const DimensionPanel = forwardRef<HTMLElement, DimensionPanelProps>(function DimensionPanel(
+  {
+    entry,
+    defaultTitle,
+    description,
+    highlights,
+    tags,
+    isCollapsed,
+    onToggleCollapse,
+    onChange,
+    onSelectHighlight,
+    onCreateTag,
+    activeHighlightId,
+    isFocusTarget,
+  },
+  ref,
+) {
   const title = entry.isCustomDimension
     ? entry.customTitle ?? 'Dimensió emergent'
     : defaultTitle ?? entry.dimensionId;
@@ -70,7 +75,12 @@ export function DimensionPanel({
   };
 
   return (
-    <article className="dimension-panel" data-collapsed={isCollapsed}>
+    <article
+      className="dimension-panel"
+      data-collapsed={isCollapsed}
+      data-focused={isFocusTarget ? 'true' : 'false'}
+      ref={ref}
+    >
       <header className="dimension-panel__header">
         <button
           type="button"
@@ -221,4 +231,4 @@ export function DimensionPanel({
       )}
     </article>
   );
-}
+});

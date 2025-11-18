@@ -23,6 +23,8 @@ interface StorageContextValue {
   directoryHandle: FileSystemDirectoryHandle | null;
   projectState: ProjectState;
   lastSavedAt: string | null;
+  isAutoSaving: boolean;
+  hasPendingChanges: boolean;
   selectDirectory: () => Promise<void>;
   saveState: (state?: ProjectState) => Promise<void>;
   reloadState: () => Promise<void>;
@@ -41,6 +43,10 @@ export function StorageProvider({ children }: { children: ReactNode }) {
   const [directoryHandle, setDirectoryHandle] = useState<FileSystemDirectoryHandle | null>(null);
   const [projectState, setProjectState] = useState<ProjectState>(() => createEmptyProjectState());
   const [lastSavedAt, setLastSavedAt] = useState<string | null>(null);
+  const [isAutoSaving, setIsAutoSaving] = useState(false);
+  const [hasPendingChanges, setHasPendingChanges] = useState(false);
+
+  const saveTimeoutRef = useRef<number | null>(null);
 
   const isFileSystemSupported = isFileSystemAccessSupported();
 
@@ -76,17 +82,42 @@ export function StorageProvider({ children }: { children: ReactNode }) {
     };
   }, [storageService, isFileSystemSupported]);
 
+  const persistState = useCallback(
+    async (stateToPersist: ProjectState) => {
+      setIsAutoSaving(true);
+      try {
+        await storageService.saveProjectState(stateToPersist);
+        const timestamp = new Date().toISOString();
+        setLastSavedAt(timestamp);
+        setHasPendingChanges(false);
+      } catch (error) {
+        console.error('No s\'ha pogut sincronitzar l\'estat del projecte', error);
+      } finally {
+        setIsAutoSaving(false);
+      }
+    },
+    [storageService],
+  );
+
   useEffect(() => {
     if (!isReady) {
       return;
     }
-    storageService
-      .saveProjectState(projectState)
-      .then(() => {
-        setLastSavedAt(new Date().toISOString());
-      })
-      .catch((error) => console.error('No s\'ha pogut sincronitzar l\'estat del projecte', error));
-  }, [projectState, isReady, storageService]);
+    if (saveTimeoutRef.current) {
+      window.clearTimeout(saveTimeoutRef.current);
+    }
+    setHasPendingChanges(true);
+    saveTimeoutRef.current = window.setTimeout(() => {
+      persistState(projectState);
+      saveTimeoutRef.current = null;
+    }, 800);
+    return () => {
+      if (saveTimeoutRef.current) {
+        window.clearTimeout(saveTimeoutRef.current);
+        saveTimeoutRef.current = null;
+      }
+    };
+  }, [projectState, isReady, persistState]);
 
   const selectDirectory = useCallback(async () => {
     if (!isFileSystemSupported) {
@@ -109,10 +140,13 @@ export function StorageProvider({ children }: { children: ReactNode }) {
   const saveState = useCallback(
     async (state?: ProjectState) => {
       const payload = state ?? projectState;
-      await storageService.saveProjectState(payload);
-      setLastSavedAt(new Date().toISOString());
+      if (saveTimeoutRef.current) {
+        window.clearTimeout(saveTimeoutRef.current);
+        saveTimeoutRef.current = null;
+      }
+      await persistState(payload);
     },
-    [projectState, storageService],
+    [persistState, projectState],
   );
 
   const reloadState = useCallback(async () => {
@@ -135,6 +169,8 @@ export function StorageProvider({ children }: { children: ReactNode }) {
       directoryHandle,
       projectState,
       lastSavedAt,
+      isAutoSaving,
+      hasPendingChanges,
       selectDirectory,
       saveState,
       reloadState,
@@ -146,6 +182,8 @@ export function StorageProvider({ children }: { children: ReactNode }) {
       isFileSystemSupported,
       isReady,
       lastSavedAt,
+      isAutoSaving,
+      hasPendingChanges,
       projectState,
       reloadState,
       saveState,
