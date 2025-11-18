@@ -1,41 +1,329 @@
 .workspace {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  gap: 1.5rem;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+  gap: 1.25rem;
+  height: calc(100vh - 4rem);
 }
 
 .workspace__panel {
   background: #ffffff;
   border-radius: 1rem;
-  padding: 1.5rem;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-  min-height: 300px;
+  box-shadow: 0 10px 25px rgba(15, 23, 42, 0.08);
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
 }
 
 .workspace__panel--viewer {
-  border: 2px dashed #d1d5db;
+  overflow: hidden;
 }
 
 .workspace__panel--sheet {
-  border: 2px dashed #c7d2fe;
+  padding: 1.5rem;
+}
+
+.workspace__panel-heading {
+  padding: 1rem 1.5rem 0;
 }
 
 .workspace__meta {
   color: #475569;
   font-size: 0.9rem;
-  margin-bottom: 1rem;
+  margin-top: 0.25rem;
 }
 
-.workspace__preview {
-  width: 100%;
-  height: 70vh;
-  border: none;
+.pdf-viewer {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1rem 1.5rem 2rem;
+  background: #f8fafc;
+  position: relative;
+}
+
+.pdf-viewer__placeholder {
+  color: #475569;
+  padding: 1rem;
+  text-align: center;
+}
+
+.pdf-viewer__placeholder--error {
+  color: #b91c1c;
+}
+
+.pdf-page {
+  position: relative;
+  margin-bottom: 1.5rem;
+  border-radius: 0.75rem;
+  background: #ffffff;
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.1);
+  overflow: hidden;
+}
+
+.pdf-page canvas {
+  width: 100% !important;
+  height: auto !important;
+  display: block;
+}
+
+.pdf-highlight-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.pdf-highlight {
+  position: absolute;
+  border-radius: 0.25rem;
+  border: 1px solid rgba(99, 102, 241, 0.9);
+  background: rgba(99, 102, 241, 0.35);
+  pointer-events: auto;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.pdf-highlight:hover {
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.3);
+  transform: translateY(-1px);
+}
+
+.pdf-highlight--active {
+  border-color: rgba(245, 158, 11, 0.9);
+  background: rgba(245, 158, 11, 0.35);
+}
+
+.pdf-highlight--pulse {
+  animation: pdf-highlight-pulse 1.2s ease-in-out;
+}
+
+@keyframes pdf-highlight-pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.6);
+  }
+  100% {
+    box-shadow: 0 0 0 8px rgba(245, 158, 11, 0);
+  }
+}
+
+.pdf-toolbar {
+  position: absolute;
+  z-index: 20;
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
   border-radius: 0.5rem;
-  background: #0f172a;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.18);
+  align-items: center;
 }
 
-@media (max-width: 1024px) {
+.pdf-toolbar select,
+.pdf-toolbar input {
+  border: 1px solid #cbd5f5;
+  border-radius: 0.375rem;
+  padding: 0.35rem 0.5rem;
+  font-size: 0.85rem;
+}
+
+.pdf-toolbar button {
+  border: none;
+  background: #4c1d95;
+  color: #ffffff;
+  border-radius: 0.375rem;
+  padding: 0.4rem 0.8rem;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.pdf-toolbar__cancel {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+.analysis-sheet-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  height: 100%;
+}
+
+.analysis-sheet-panel__intro p {
+  color: #475569;
+  margin-top: 0.35rem;
+}
+
+.analysis-sheet-panel__dimensions {
+  flex: 1;
+  overflow-y: auto;
+  padding-right: 0.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.analysis-sheet-panel__actions {
+  border-top: 1px solid #e2e8f0;
+  padding-top: 1rem;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.analysis-sheet-panel__actions button {
+  background: #10b981;
+  border: none;
+  color: #ffffff;
+  border-radius: 0.5rem;
+  padding: 0.6rem 1rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.dimension-panel {
+  border: 1px solid #e2e8f0;
+  border-radius: 0.75rem;
+  padding: 1rem;
+  background: #ffffff;
+}
+
+.dimension-panel__header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.dimension-panel__toggle {
+  border: none;
+  background: transparent;
+  font-size: 1.05rem;
+  display: flex;
+  gap: 0.25rem;
+  align-items: center;
+  cursor: pointer;
+  font-weight: 600;
+  color: #1e1b4b;
+}
+
+.dimension-panel__chevron {
+  color: #6366f1;
+}
+
+.dimension-panel__title {
+  flex: 1;
+}
+
+.dimension-panel__description {
+  color: #475569;
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+.dimension-panel__body {
+  margin-top: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+.dimension-panel__field label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #475569;
+  margin-bottom: 0.25rem;
+  display: block;
+}
+
+.dimension-panel__field textarea {
+  width: 100%;
+  border-radius: 0.5rem;
+  border: 1px solid #dbeafe;
+  padding: 0.6rem;
+  resize: vertical;
+  font-size: 0.95rem;
+  font-family: inherit;
+}
+
+.dimension-panel__field--highlights {
+  border-top: 1px dashed #e2e8f0;
+  padding-top: 0.75rem;
+}
+
+.dimension-panel__field-header {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.85rem;
+  color: #475569;
+}
+
+.dimension-panel__field-count {
+  background: #eef2ff;
+  border-radius: 999px;
+  padding: 0.1rem 0.6rem;
+  font-weight: 600;
+}
+
+.dimension-panel__empty {
+  font-size: 0.85rem;
+  color: #94a3b8;
+  margin: 0.35rem 0 0;
+}
+
+.dimension-panel__highlights {
+  list-style: none;
+  margin: 0.5rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.dimension-panel__highlight {
+  border: 1px solid #e2e8f0;
+  border-radius: 0.6rem;
+  padding: 0.5rem 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  background: #f8fafc;
+  cursor: pointer;
+  text-align: left;
+}
+
+.dimension-panel__highlight[data-active='true'] {
+  border-color: #c084fc;
+  box-shadow: 0 0 0 2px rgba(192, 132, 252, 0.2);
+}
+
+.dimension-panel__highlight-page {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #4c1d95;
+}
+
+.dimension-panel__highlight-text {
+  font-size: 0.9rem;
+  color: #0f172a;
+}
+
+.dimension-panel__highlight-comment {
+  font-size: 0.8rem;
+  color: #475569;
+}
+
+.dimension-panel__field--placeholder {
+  border-top: 1px dashed #e2e8f0;
+  padding-top: 0.75rem;
+}
+
+@media (max-width: 1200px) {
   .workspace {
     grid-template-columns: 1fr;
+    height: auto;
+  }
+
+  .pdf-viewer {
+    max-height: 60vh;
+  }
+
+  .analysis-sheet-panel__dimensions {
+    max-height: 60vh;
   }
 }
