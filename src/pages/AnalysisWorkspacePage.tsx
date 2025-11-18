@@ -4,8 +4,11 @@ import {
   AnalysisSheet,
   AnalysisSheetNotes,
   DEFAULT_ANALYSIS_DIMENSIONS,
+  DrawingAnnotation,
   Highlight,
   HighlightRect,
+  Tag,
+  TagLink,
 } from '../models';
 import { AnalysisSheetPanel } from '../components/analysis/AnalysisSheetPanel';
 import { PdfViewer } from '../components/analysis/PdfViewer';
@@ -140,6 +143,16 @@ export function AnalysisWorkspacePage() {
     [projectState.highlights, guideId],
   );
 
+  const guideTags = useMemo(() => projectState.tags.filter((tag) => tag.guideId === guideId), [
+    projectState.tags,
+    guideId,
+  ]);
+
+  const guideDrawings = useMemo(
+    () => projectState.drawings.filter((drawing) => drawing.guideId === guideId),
+    [projectState.drawings, guideId],
+  );
+
   const dimensionOptions = useMemo(
     () =>
       sheetDraft.map((entry) => {
@@ -201,7 +214,10 @@ export function AnalysisWorkspacePage() {
     text: string;
     pageNumber: number;
     rects: HighlightRect[];
-  }) => {
+  }): Highlight | null => {
+    if (!guideId) {
+      return null;
+    }
     const highlight: Highlight = {
       id: generateId('highlight'),
       guideId,
@@ -217,10 +233,142 @@ export function AnalysisWorkspacePage() {
       highlights: [...state.highlights, highlight],
     }));
     setActiveHighlightId(highlight.id);
+    return highlight;
   };
 
   const handleSelectHighlight = (highlightId: string) => {
     setActiveHighlightId(highlightId);
+  };
+
+  const handleCreateTag = (dimensionId: string, label: string, color?: string) => {
+    if (!guideId) {
+      return;
+    }
+    const trimmed = label.trim();
+    if (!trimmed) {
+      return;
+    }
+    const tag: Tag = {
+      id: generateId('tag'),
+      guideId,
+      dimensionId,
+      label: trimmed,
+      color: color?.trim() || undefined,
+      links: [],
+      createdAt: new Date().toISOString(),
+    };
+    updateProjectState((state) => ({
+      ...state,
+      tags: [...state.tags, tag],
+    }));
+  };
+
+  const handleAttachTagToHighlight = (tagId: string, highlightId: string, comment?: string) => {
+    if (!guideId) {
+      return;
+    }
+    updateProjectState((state) => {
+      const highlight = state.highlights.find((item) => item.id === highlightId);
+      if (!highlight) {
+        return state;
+      }
+      const trimmedComment = comment?.trim();
+      return {
+        ...state,
+        tags: state.tags.map((tag) => {
+          if (tag.id !== tagId) {
+            return tag;
+          }
+          const existingLink = tag.links.find((link) => link.highlightId === highlightId);
+          if (existingLink) {
+            if (comment === undefined) {
+              return tag;
+            }
+            return {
+              ...tag,
+              links: tag.links.map((link) =>
+                link.id === existingLink.id
+                  ? {
+                      ...link,
+                      comment: trimmedComment || undefined,
+                    }
+                  : link,
+              ),
+            };
+          }
+          const link: TagLink = {
+            id: generateId('tag-link'),
+            highlightId,
+            pageNumber: highlight.pageNumber,
+            createdAt: new Date().toISOString(),
+            comment: trimmedComment || undefined,
+          };
+          return {
+            ...tag,
+            links: [...tag.links, link],
+          };
+        }),
+      };
+    });
+  };
+
+  const handleUpdateTagLinkComment = (tagId: string, linkId: string, comment: string) => {
+    updateProjectState((state) => ({
+      ...state,
+      tags: state.tags.map((tag) =>
+        tag.id === tagId
+          ? {
+              ...tag,
+              links: tag.links.map((link) =>
+                link.id === linkId
+                  ? {
+                      ...link,
+                      comment: comment.trim() || undefined,
+                    }
+                  : link,
+              ),
+            }
+          : tag,
+      ),
+    }));
+  };
+
+  const handleRemoveTagLink = (tagId: string, linkId: string) => {
+    updateProjectState((state) => ({
+      ...state,
+      tags: state.tags.map((tag) =>
+        tag.id === tagId
+          ? {
+              ...tag,
+              links: tag.links.filter((link) => link.id !== linkId),
+            }
+          : tag,
+      ),
+    }));
+  };
+
+  const handleAddDrawingAnnotation = (pageNumber: number, data: string) => {
+    if (!guideId || !data.trim()) {
+      return;
+    }
+    const annotation: DrawingAnnotation = {
+      id: generateId('drawing'),
+      guideId,
+      pageNumber,
+      data,
+      createdAt: new Date().toISOString(),
+    };
+    updateProjectState((state) => ({
+      ...state,
+      drawings: [...state.drawings, annotation],
+    }));
+  };
+
+  const handleRemoveDrawingAnnotation = (annotationId: string) => {
+    updateProjectState((state) => ({
+      ...state,
+      drawings: state.drawings.filter((annotation) => annotation.id !== annotationId),
+    }));
   };
 
   return (
@@ -241,6 +389,13 @@ export function AnalysisWorkspacePage() {
           onCreateHighlight={handleCreateHighlight}
           onSelectHighlight={handleSelectHighlight}
           activeHighlightId={activeHighlightId}
+          tags={guideTags}
+          onAttachTagToHighlight={handleAttachTagToHighlight}
+          onUpdateTagLinkComment={handleUpdateTagLinkComment}
+          onRemoveTagLink={handleRemoveTagLink}
+          drawings={guideDrawings}
+          onAddDrawingAnnotation={handleAddDrawingAnnotation}
+          onRemoveDrawingAnnotation={handleRemoveDrawingAnnotation}
         />
       </div>
       <div className="workspace__panel workspace__panel--sheet">
@@ -249,8 +404,10 @@ export function AnalysisWorkspacePage() {
           sheetEntries={sheetDraft}
           dimensionDefinitions={DEFAULT_ANALYSIS_DIMENSIONS}
           highlights={guideHighlights}
+          tags={guideTags}
           onChangeNotes={handleChangeNotes}
           onAddCustomDimension={handleAddCustomDimension}
+          onCreateTag={handleCreateTag}
           onSelectHighlight={handleSelectHighlight}
           activeHighlightId={activeHighlightId}
         />

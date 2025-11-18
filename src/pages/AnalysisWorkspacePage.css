@@ -40,6 +40,28 @@
   position: relative;
 }
 
+.pdf-viewer__controls {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.pdf-viewer__controls button {
+  border: 1px solid #c4b5fd;
+  background: #eef2ff;
+  color: #4c1d95;
+  border-radius: 999px;
+  padding: 0.3rem 0.85rem;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.pdf-viewer__controls button[data-active='true'] {
+  background: #4c1d95;
+  color: #ffffff;
+}
+
 .pdf-viewer__placeholder {
   color: #475569;
   padding: 1rem;
@@ -56,7 +78,7 @@
   border-radius: 0.75rem;
   background: #ffffff;
   box-shadow: 0 4px 14px rgba(15, 23, 42, 0.1);
-  overflow: hidden;
+  overflow: visible;
 }
 
 .pdf-page canvas {
@@ -65,10 +87,9 @@
   display: block;
 }
 
-.pdf-highlight-layer {
+.pdf-overlay {
   position: absolute;
   inset: 0;
-  pointer-events: none;
 }
 
 .pdf-highlight {
@@ -78,6 +99,7 @@
   background: rgba(99, 102, 241, 0.35);
   pointer-events: auto;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
+  overflow: visible;
 }
 
 .pdf-highlight:hover {
@@ -92,6 +114,41 @@
 
 .pdf-highlight--pulse {
   animation: pdf-highlight-pulse 1.2s ease-in-out;
+}
+
+.pdf-highlight__tag-controls {
+  position: absolute;
+  top: -1.5rem;
+  left: 0;
+  display: inline-flex;
+  gap: 0.35rem;
+  pointer-events: auto;
+}
+
+.pdf-highlight__tag {
+  border: none;
+  border-radius: 999px;
+  padding: 0.1rem 0.55rem;
+  font-size: 0.65rem;
+  color: #ffffff;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.2);
+}
+
+.pdf-highlight__tag-add {
+  border: 1px dashed #94a3b8;
+  background: rgba(248, 250, 252, 0.95);
+  color: #475569;
+  width: 1.4rem;
+  height: 1.4rem;
+  border-radius: 999px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.pdf-highlight__tag-add:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
 }
 
 @keyframes pdf-highlight-pulse {
@@ -137,6 +194,147 @@
 .pdf-toolbar__cancel {
   background: #f1f5f9;
   color: #0f172a;
+}
+
+.pdf-drawing-layer {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.pdf-drawing-layer[data-active='true'] {
+  pointer-events: auto;
+  cursor: crosshair;
+}
+
+.pdf-drawing-layer__path {
+  stroke: #f97316;
+  stroke-width: 3;
+  fill: none;
+  opacity: 0.9;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.pdf-drawing-layer__path--preview {
+  stroke-dasharray: 6 4;
+  opacity: 0.65;
+}
+
+.pdf-drawing-list {
+  margin-top: 0.5rem;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  padding: 0.5rem 0.75rem;
+}
+
+.pdf-drawing-list__title {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #475569;
+}
+
+.pdf-drawing-list ul {
+  list-style: none;
+  margin: 0.35rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.pdf-drawing-list li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.8rem;
+  color: #0f172a;
+}
+
+.pdf-drawing-list li button {
+  border: none;
+  background: #fee2e2;
+  color: #b91c1c;
+  border-radius: 0.4rem;
+  padding: 0.2rem 0.5rem;
+  cursor: pointer;
+  font-size: 0.75rem;
+}
+
+.pdf-tag-popover {
+  position: absolute;
+  z-index: 30;
+  background: #ffffff;
+  border: 1px solid #cbd5f5;
+  border-radius: 0.5rem;
+  padding: 0.75rem;
+  width: 240px;
+  box-shadow: 0 20px 35px rgba(15, 23, 42, 0.25);
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.pdf-tag-popover__badge {
+  align-self: flex-start;
+  border-radius: 999px;
+  padding: 0.15rem 0.6rem;
+  color: #ffffff;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.pdf-tag-popover__title {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #1e1b4b;
+  margin: 0;
+}
+
+.pdf-tag-popover textarea {
+  min-height: 70px;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.4rem;
+  padding: 0.4rem;
+  resize: vertical;
+  font-family: inherit;
+  font-size: 0.85rem;
+}
+
+.pdf-tag-popover select {
+  border: 1px solid #e2e8f0;
+  border-radius: 0.4rem;
+  padding: 0.35rem;
+  font-size: 0.85rem;
+}
+
+.pdf-tag-popover__actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.pdf-tag-popover__actions button {
+  flex: 1;
+  border: none;
+  border-radius: 0.4rem;
+  padding: 0.35rem 0.5rem;
+  font-size: 0.85rem;
+  cursor: pointer;
+  background: #312e81;
+  color: #ffffff;
+}
+
+.pdf-tag-popover__actions button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.pdf-tag-popover__delete {
+  background: #fee2e2;
+  color: #991b1b;
 }
 
 .analysis-sheet-panel {
@@ -311,6 +509,118 @@
 .dimension-panel__field--placeholder {
   border-top: 1px dashed #e2e8f0;
   padding-top: 0.75rem;
+}
+
+.dimension-panel__tags-intro {
+  margin-bottom: 0.65rem;
+}
+
+.dimension-panel__tag-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.dimension-panel__tag-form input[type='text'] {
+  flex: 1;
+  border: 1px solid #dbeafe;
+  border-radius: 0.5rem;
+  padding: 0.45rem;
+}
+
+.dimension-panel__color-label {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.8rem;
+  color: #475569;
+}
+
+.dimension-panel__color-label input {
+  width: 2.2rem;
+  height: 2rem;
+  border: none;
+  padding: 0;
+  background: transparent;
+}
+
+.dimension-panel__tag-form button {
+  border: none;
+  background: #4c1d95;
+  color: #ffffff;
+  border-radius: 0.5rem;
+  padding: 0.45rem 0.75rem;
+  cursor: pointer;
+}
+
+.dimension-panel__tags {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.dimension-panel__tags details {
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  padding: 0.35rem 0.5rem;
+}
+
+.dimension-panel__tags summary {
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+  cursor: pointer;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.dimension-panel__tag-dot {
+  width: 0.75rem;
+  height: 0.75rem;
+  border-radius: 999px;
+  display: inline-flex;
+}
+
+.dimension-panel__tag-links {
+  list-style: none;
+  margin: 0.5rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.dimension-panel__tag-link-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.8rem;
+  color: #475569;
+}
+
+.dimension-panel__tag-link-header button {
+  border: none;
+  background: #e0f2fe;
+  color: #0369a1;
+  border-radius: 0.4rem;
+  padding: 0.2rem 0.6rem;
+  cursor: pointer;
+  font-size: 0.75rem;
+}
+
+.dimension-panel__tag-comment {
+  font-size: 0.85rem;
+  color: #0f172a;
+  margin: 0.25rem 0 0;
+}
+
+.dimension-panel__tag-comment--empty {
+  color: #94a3b8;
+  font-style: italic;
 }
 
 @media (max-width: 1200px) {
