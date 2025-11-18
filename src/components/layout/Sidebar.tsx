@@ -2,9 +2,9 @@ import { NavLink } from 'react-router-dom';
 import './Sidebar.css';
 
 const navItems = [
-  { to: '/', label: 'Guies' },
-  { to: '/comparative', label: 'Graella comparativa' },
-  { to: '/settings', label: 'Configuració' },
+  { to: '', label: 'Guies', end: true },
+  { to: 'comparative', label: 'Graella comparativa' },
+  { to: 'settings', label: 'Configuració' },
 ];
 
 export function Sidebar() {
@@ -17,12 +17,12 @@ export function Sidebar() {
       <nav className="sidebar__nav">
         {navItems.map((item) => (
           <NavLink
-            key={item.to}
+            key={item.label}
             to={item.to}
             className={({ isActive }) =>
               `sidebar__link${isActive ? ' sidebar__link--active' : ''}`
             }
-            end={item.to === '/'}
+            end={item.end}
           >
             {item.label}
           </NavLink>
