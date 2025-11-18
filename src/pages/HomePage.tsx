@@ -6,6 +6,24 @@ import { GuideUploadDialog } from '../components/guides/GuideUploadDialog';
 import { useStorage } from '../services/storage/StorageContext';
 import './PageStyles.css';
 
+async function computeGuideFingerprint(file: File): Promise<string> {
+  try {
+    if (typeof crypto !== 'undefined' && crypto.subtle?.digest) {
+      const buffer = await file.arrayBuffer();
+      const hashBuffer = await crypto.subtle.digest('SHA-256', buffer);
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      return hashArray.map((byte) => byte.toString(16).padStart(2, '0')).join('');
+    }
+  } catch (error) {
+    console.warn('Unable to compute SHA-256 fingerprint. Falling back to name+size.', error);
+  }
+  return `${file.name}::${file.size}`;
+}
+
+function generateGuideId(): string {
+  return typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `guide-${Date.now()}`;
+}
+
 export function HomePage() {
   const { projectState, updateProjectState, storageService } = useStorage();
   const [isUploadOpen, setIsUploadOpen] = useState(false);
@@ -31,27 +49,54 @@ export function HomePage() {
     institution?: string;
     year?: string;
   }) => {
-    const id = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `guide-${Date.now()}`;
-    await storageService.saveGuideFile(file, id);
+    const fingerprint = await computeGuideFingerprint(file);
+    const existingGuide = projectState.guides.find((guide) => guide.fingerprint === fingerprint);
+    const guideId = existingGuide?.id ?? generateGuideId();
+    await storageService.saveGuideFile(file, guideId);
     const now = new Date().toISOString();
-    updateProjectState((prev) => ({
-      ...prev,
-      guides: [
-        ...prev.guides,
-        {
-          id,
-          title,
-          institution,
-          year,
-          status: 'not_started' as GuideStatus,
-          sourceFileName: file.name,
-          storageFileName: `${id}.bin`,
-          mimeType: file.type,
-          createdAt: now,
-          updatedAt: now,
-        },
-      ],
-    }));
+    updateProjectState((prev) => {
+      const previousGuide = prev.guides.find((guide) => guide.fingerprint === fingerprint);
+      if (previousGuide) {
+        return {
+          ...prev,
+          guides: prev.guides.map((guide) =>
+            guide.id === previousGuide.id
+              ? {
+                  ...guide,
+                  title,
+                  institution,
+                  year,
+                  sourceFileName: file.name,
+                  mimeType: file.type,
+                  updatedAt: now,
+                  fingerprint,
+                }
+              : guide,
+          ),
+        };
+      }
+
+      const storageFileName = `${guideId}.bin`;
+      return {
+        ...prev,
+        guides: [
+          ...prev.guides,
+          {
+            id: guideId,
+            title,
+            institution,
+            year,
+            status: 'not_started' as GuideStatus,
+            sourceFileName: file.name,
+            storageFileName,
+            mimeType: file.type,
+            createdAt: now,
+            updatedAt: now,
+            fingerprint,
+          },
+        ],
+      };
+    });
   };
 
   const openGuide = (guideId: string) => {

@@ -10,6 +10,7 @@ export interface GuideDocument {
   sourceFileName: string;
   storageFileName: string;
   mimeType?: string;
+  fingerprint?: string;
   createdAt: string;
   updatedAt: string;
 }
