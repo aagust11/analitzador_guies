@@ -23,6 +23,12 @@ interface PdfViewerProps {
   activeHighlightId?: string | null;
   tags: Tag[];
   onAttachTagToHighlight: (tagId: string, highlightId: string, comment?: string) => void;
+  onCreateTagPin: (
+    tagId: string,
+    pageNumber: number,
+    position: { x: number; y: number },
+    comment?: string,
+  ) => void;
   onUpdateTagLinkComment: (tagId: string, linkId: string, comment: string) => void;
   onRemoveTagLink: (tagId: string, linkId: string) => void;
   drawings: DrawingAnnotation[];
@@ -58,7 +64,16 @@ interface CreateTagPopover extends TagPopoverBase {
   comment: string;
 }
 
-type TagPopoverState = ViewTagPopover | CreateTagPopover;
+interface CreatePinTagPopover extends TagPopoverBase {
+  type: 'create-pin';
+  dimensionId: string;
+  selectedTagId: string;
+  comment: string;
+  pageNumber: number;
+  pinPosition: { x: number; y: number };
+}
+
+type TagPopoverState = ViewTagPopover | CreateTagPopover | CreatePinTagPopover;
 
 interface StrokeState {
   pageNumber: number;
@@ -89,6 +104,7 @@ export function PdfViewer({
   activeHighlightId,
   tags,
   onAttachTagToHighlight,
+  onCreateTagPin,
   onUpdateTagLinkComment,
   onRemoveTagLink,
   drawings,
@@ -101,6 +117,7 @@ export function PdfViewer({
   const [loadError, setLoadError] = useState<string | null>(null);
   const [tagPopover, setTagPopover] = useState<TagPopoverState | null>(null);
   const [isDrawingMode, setIsDrawingMode] = useState(false);
+  const [isPlacingTag, setIsPlacingTag] = useState(false);
   const [activeStroke, setActiveStroke] = useState<StrokeState | null>(null);
 
   const highlightsByPage = useMemo(() => {
@@ -141,6 +158,25 @@ export function PdfViewer({
     return record;
   }, [tags]);
 
+  const tagPinsByPage = useMemo(() => {
+    const map = new Map<number, { tag: Tag; link: TagLink }[]>();
+    tags.forEach((tag) => {
+      tag.links.forEach((link) => {
+        if (!link.position || typeof link.position.x !== 'number' || typeof link.position.y !== 'number') {
+          return;
+        }
+        if (!link.pageNumber) {
+          return;
+        }
+        if (!map.has(link.pageNumber)) {
+          map.set(link.pageNumber, []);
+        }
+        map.get(link.pageNumber)?.push({ tag, link });
+      });
+    });
+    return map;
+  }, [tags]);
+
   const drawingsByPage = useMemo(() => {
     const map = new Map<number, DrawingAnnotation[]>();
     drawings.forEach((annotation) => {
@@ -157,6 +193,7 @@ export function PdfViewer({
     setTagPopover(null);
     setActiveStroke(null);
     setIsDrawingMode(false);
+    setIsPlacingTag(false);
   }, [fileUrl]);
 
   useEffect(() => {
@@ -190,18 +227,66 @@ export function PdfViewer({
   }, [isDrawingMode]);
 
   useEffect(() => {
-    if (!tagPopover || tagPopover.type !== 'create') {
+    if (isPlacingTag) {
+      setSelectionInfo(null);
+      setIsDrawingMode(false);
+      window.getSelection()?.removeAllRanges();
+    }
+  }, [isPlacingTag]);
+
+  useEffect(() => {
+    if (!tagPopover) {
       return;
     }
-    const available = tagsByDimension[tagPopover.dimensionId] ?? [];
-    if (available.length === 0) {
-      setTagPopover(null);
+    if (tagPopover.type === 'create') {
+      const available = tagsByDimension[tagPopover.dimensionId] ?? [];
+      if (available.length === 0) {
+        setTagPopover(null);
+        return;
+      }
+      if (!available.some((option) => option.id === tagPopover.selectedTagId)) {
+        setTagPopover({ ...tagPopover, selectedTagId: available[0].id });
+      }
       return;
     }
-    if (!available.some((option) => option.id === tagPopover.selectedTagId)) {
-      setTagPopover({ ...tagPopover, selectedTagId: available[0].id });
+    if (tagPopover.type === 'create-pin') {
+      const availableDimensions = dimensions.filter(
+        (dimension) => (tagsByDimension[dimension.id] ?? []).length > 0,
+      );
+      if (availableDimensions.length === 0) {
+        setTagPopover(null);
+        return;
+      }
+      if (!availableDimensions.some((dimension) => dimension.id === tagPopover.dimensionId)) {
+        const fallbackDimension = availableDimensions[0];
+        setTagPopover({
+          ...tagPopover,
+          dimensionId: fallbackDimension.id,
+          selectedTagId: tagsByDimension[fallbackDimension.id]?.[0]?.id ?? '',
+        });
+        return;
+      }
+      const availableTags = tagsByDimension[tagPopover.dimensionId] ?? [];
+      if (availableTags.length === 0) {
+        const fallbackDimension = availableDimensions.find(
+          (dimension) => (tagsByDimension[dimension.id] ?? []).length > 0,
+        );
+        if (fallbackDimension) {
+          setTagPopover({
+            ...tagPopover,
+            dimensionId: fallbackDimension.id,
+            selectedTagId: tagsByDimension[fallbackDimension.id]?.[0]?.id ?? '',
+          });
+        } else {
+          setTagPopover(null);
+        }
+        return;
+      }
+      if (!availableTags.some((option) => option.id === tagPopover.selectedTagId)) {
+        setTagPopover({ ...tagPopover, selectedTagId: availableTags[0].id });
+      }
     }
-  }, [tagPopover, tagsByDimension]);
+  }, [tagPopover, tagsByDimension, dimensions]);
 
   useEffect(() => {
     if (!tagPopover || tagPopover.type !== 'view') {
@@ -220,7 +305,7 @@ export function PdfViewer({
   }, [tagPopover, tags]);
 
   const handleMouseUp = () => {
-    if (isDrawingMode) {
+    if (isDrawingMode || isPlacingTag) {
       return;
     }
     const selection = window.getSelection();
@@ -385,6 +470,60 @@ export function PdfViewer({
     setTagPopover(null);
   };
 
+  const handleConfirmPinCreation = () => {
+    if (!tagPopover || tagPopover.type !== 'create-pin' || !tagPopover.selectedTagId) {
+      return;
+    }
+    onCreateTagPin(
+      tagPopover.selectedTagId,
+      tagPopover.pageNumber,
+      tagPopover.pinPosition,
+      tagPopover.comment,
+    );
+    setTagPopover(null);
+  };
+
+  const handleTagPlacementClick = (
+    event: ReactMouseEvent<HTMLDivElement>,
+    pageNumber: number,
+  ) => {
+    if (!isPlacingTag) {
+      return;
+    }
+    event.preventDefault();
+    const availableDimensions = dimensions.filter(
+      (dimension) => (tagsByDimension[dimension.id] ?? []).length > 0,
+    );
+    if (availableDimensions.length === 0) {
+      setIsPlacingTag(false);
+      window.alert('Cal crear prèviament etiquetes per poder col·locar-les al document.');
+      return;
+    }
+    const target = event.currentTarget;
+    const bounds = target.getBoundingClientRect();
+    const x = (event.clientX - bounds.left) / bounds.width;
+    const y = (event.clientY - bounds.top) / bounds.height;
+    const containerBounds = containerRef.current?.getBoundingClientRect();
+    const popoverPosition = containerBounds
+      ? {
+          top: Math.max(0, event.clientY - containerBounds.top),
+          left: Math.max(0, event.clientX - containerBounds.left),
+        }
+      : { top: 0, left: 0 };
+    const firstDimensionId = availableDimensions[0].id;
+    const firstTag = tagsByDimension[firstDimensionId]?.[0];
+    setTagPopover({
+      type: 'create-pin',
+      dimensionId: firstDimensionId,
+      selectedTagId: firstTag?.id ?? '',
+      comment: '',
+      pageNumber,
+      pinPosition: { x, y },
+      position: popoverPosition,
+    });
+    setIsPlacingTag(false);
+  };
+
   const getNormalizedPoint = (event: ReactPointerEvent<SVGSVGElement>) => {
     const bounds = event.currentTarget.getBoundingClientRect();
     return {
@@ -453,6 +592,9 @@ export function PdfViewer({
   return (
     <div className="pdf-viewer" data-drawing={isDrawingMode} ref={containerRef} onMouseUp={handleMouseUp}>
       <div className="pdf-viewer__controls">
+        <button type="button" data-active={isPlacingTag} onClick={() => setIsPlacingTag((prev) => !prev)}>
+          {isPlacingTag ? 'Cancel·lar posició' : 'Col·locar etiqueta'}
+        </button>
         <button type="button" data-active={isDrawingMode} onClick={() => setIsDrawingMode((prev) => !prev)}>
           {isDrawingMode ? 'Desactivar dibuix' : 'Mode dibuix'}
         </button>
@@ -534,6 +676,24 @@ export function PdfViewer({
                     ));
                   })}
                 </div>
+                <div className="pdf-tag-pin-layer">
+                  {(tagPinsByPage.get(pageNumber) ?? []).map(({ tag, link }) => (
+                    <button
+                      key={link.id}
+                      type="button"
+                      className="pdf-tag-pin"
+                      style={{
+                        left: `${(link.position?.x ?? 0) * 100}%`,
+                        top: `${(link.position?.y ?? 0) * 100}%`,
+                        backgroundColor: tag.color || '#4c1d95',
+                      }}
+                      onClick={(event) => handleOpenTagPopover(event, tag, link)}
+                      title={tag.label}
+                    >
+                      {tag.label}
+                    </button>
+                  ))}
+                </div>
                 <svg
                   className="pdf-drawing-layer"
                   data-active={isDrawingMode}
@@ -552,6 +712,11 @@ export function PdfViewer({
                     <path d={activeStrokePath} className="pdf-drawing-layer__path pdf-drawing-layer__path--preview" />
                   ) : null}
                 </svg>
+                <div
+                  className="pdf-tag-placement-layer"
+                  data-active={isPlacingTag}
+                  onClick={(event) => handleTagPlacementClick(event, pageNumber)}
+                />
               </div>
               {pageDrawings.length > 0 ? (
                 <div className="pdf-drawing-list">
@@ -608,7 +773,7 @@ export function PdfViewer({
                 </button>
               </div>
             </>
-          ) : (
+          ) : tagPopover.type === 'create' ? (
             <>
               <p className="pdf-tag-popover__title">Vincular etiqueta</p>
               <select
@@ -633,6 +798,58 @@ export function PdfViewer({
               <div className="pdf-tag-popover__actions">
                 <button type="button" onClick={handleConfirmTagCreation} disabled={!tagPopover.selectedTagId}>
                   Vincular
+                </button>
+                <button type="button" onClick={() => setTagPopover(null)}>
+                  Cancel·lar
+                </button>
+              </div>
+            </>
+          ) : (
+            <>
+              <p className="pdf-tag-popover__title">Col·locar etiqueta</p>
+              <select
+                value={tagPopover.dimensionId}
+                onChange={(event) => {
+                  const nextDimensionId = event.target.value;
+                  const nextTags = tagsByDimension[nextDimensionId] ?? [];
+                  setTagPopover({
+                    ...tagPopover,
+                    dimensionId: nextDimensionId,
+                    selectedTagId: nextTags[0]?.id ?? '',
+                  });
+                }}
+              >
+                {dimensions
+                  .filter((dimension) => (tagsByDimension[dimension.id] ?? []).length > 0)
+                  .map((dimension) => (
+                    <option key={dimension.id} value={dimension.id}>
+                      {dimension.title}
+                    </option>
+                  ))}
+              </select>
+              <select
+                value={tagPopover.selectedTagId}
+                onChange={(event) =>
+                  setTagPopover({ ...tagPopover, selectedTagId: event.target.value })
+                }
+                disabled={(tagsByDimension[tagPopover.dimensionId] ?? []).length === 0}
+              >
+                {(tagsByDimension[tagPopover.dimensionId] ?? []).map((option) => (
+                  <option key={option.id} value={option.id}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+              <textarea
+                value={tagPopover.comment}
+                onChange={(event) =>
+                  setTagPopover({ ...tagPopover, comment: event.target.value })
+                }
+                placeholder="Comentari contextual de l'etiqueta"
+              />
+              <div className="pdf-tag-popover__actions">
+                <button type="button" onClick={handleConfirmPinCreation} disabled={!tagPopover.selectedTagId}>
+                  Guardar
                 </button>
                 <button type="button" onClick={() => setTagPopover(null)}>
                   Cancel·lar
