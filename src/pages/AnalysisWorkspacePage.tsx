@@ -332,6 +332,37 @@ export function AnalysisWorkspacePage() {
     });
   };
 
+  const handleCreateTagPin = (
+    tagId: string,
+    pageNumber: number,
+    position: { x: number; y: number },
+    comment?: string,
+  ) => {
+    if (!guideId) {
+      return;
+    }
+    updateProjectState((state) => ({
+      ...state,
+      tags: state.tags.map((tag) =>
+        tag.id === tagId
+          ? {
+              ...tag,
+              links: [
+                ...tag.links,
+                {
+                  id: generateId('tag-link'),
+                  pageNumber,
+                  position,
+                  comment: comment?.trim() || undefined,
+                  createdAt: new Date().toISOString(),
+                },
+              ],
+            }
+          : tag,
+      ),
+    }));
+  };
+
   const handleUpdateTagLinkComment = (tagId: string, linkId: string, comment: string) => {
     updateProjectState((state) => ({
       ...state,
@@ -411,6 +442,7 @@ export function AnalysisWorkspacePage() {
           activeHighlightId={activeHighlightId}
           tags={guideTags}
           onAttachTagToHighlight={handleAttachTagToHighlight}
+          onCreateTagPin={handleCreateTagPin}
           onUpdateTagLinkComment={handleUpdateTagLinkComment}
           onRemoveTagLink={handleRemoveTagLink}
           drawings={guideDrawings}
@@ -432,6 +464,7 @@ export function AnalysisWorkspacePage() {
           activeHighlightId={activeHighlightId}
           focusedDimensionId={pendingFocusDimension}
           onFocusDimensionConsumed={handleFocusDimensionConsumed}
+          onUpdateTagLinkComment={handleUpdateTagLinkComment}
         />
       </div>
     </section>

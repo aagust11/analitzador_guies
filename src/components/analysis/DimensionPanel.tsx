@@ -16,6 +16,7 @@ interface DimensionPanelProps {
   onCreateTag: (dimensionId: string, label: string, color?: string) => void;
   activeHighlightId?: string | null;
   isFocusTarget?: boolean;
+  onUpdateTagLinkComment: (tagId: string, linkId: string, comment: string) => void;
 }
 
 export const DimensionPanel = forwardRef<HTMLElement, DimensionPanelProps>(function DimensionPanel(
@@ -32,6 +33,7 @@ export const DimensionPanel = forwardRef<HTMLElement, DimensionPanelProps>(funct
     onCreateTag,
     activeHighlightId,
     isFocusTarget,
+    onUpdateTagLinkComment,
   },
   ref,
 ) {
@@ -193,29 +195,29 @@ export const DimensionPanel = forwardRef<HTMLElement, DimensionPanelProps>(funct
                         <ul className="dimension-panel__tag-links">
                           {tag.links.map((link) => {
                             const linkedHighlight = link.highlightId ? highlightLookup.get(link.highlightId) : null;
+                            const locationLabel = linkedHighlight
+                              ? `Pàg. ${linkedHighlight.pageNumber}`
+                              : link.pageNumber
+                                ? `Posició pàg. ${link.pageNumber}`
+                                : 'Posició sense referència';
                             return (
                               <li key={link.id}>
                                 <div className="dimension-panel__tag-link-header">
-                                  <span className="dimension-panel__tag-link-page">
-                                    {linkedHighlight
-                                      ? `Pàg. ${linkedHighlight.pageNumber}`
-                                      : link.pageNumber
-                                        ? `Posició pàg. ${link.pageNumber}`
-                                        : 'Posició sense referència'}
-                                  </span>
+                                  <span className="dimension-panel__tag-link-page">{locationLabel}</span>
                                   {linkedHighlight ? (
                                     <button type="button" onClick={() => onSelectHighlight(linkedHighlight.id)}>
                                       Centrar el highlight
                                     </button>
                                   ) : null}
                                 </div>
-                                {link.comment ? (
-                                  <p className="dimension-panel__tag-comment">«{link.comment}»</p>
-                                ) : (
-                                  <p className="dimension-panel__tag-comment dimension-panel__tag-comment--empty">
-                                    Sense comentari específic
-                                  </p>
-                                )}
+                                <textarea
+                                  className="dimension-panel__tag-comment-input"
+                                  value={link.comment ?? ''}
+                                  placeholder="Comentari contextual de l'etiqueta"
+                                  onChange={(event) =>
+                                    onUpdateTagLinkComment(tag.id, link.id, event.target.value)
+                                  }
+                                />
                               </li>
                             );
                           })}

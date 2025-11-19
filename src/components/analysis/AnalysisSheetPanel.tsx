@@ -17,6 +17,7 @@ interface AnalysisSheetPanelProps {
   activeHighlightId?: string | null;
   focusedDimensionId?: string | null;
   onFocusDimensionConsumed?: (dimensionId: string | null) => void;
+  onUpdateTagLinkComment: (tagId: string, linkId: string, comment: string) => void;
 }
 
 export function AnalysisSheetPanel({
@@ -32,6 +33,7 @@ export function AnalysisSheetPanel({
   activeHighlightId,
   focusedDimensionId,
   onFocusDimensionConsumed,
+  onUpdateTagLinkComment,
 }: AnalysisSheetPanelProps) {
   const [collapsedMap, setCollapsedMap] = useState<Record<string, boolean>>({});
   const panelRefs = useRef<Record<string, HTMLElement | null>>({});
@@ -102,6 +104,7 @@ export function AnalysisSheetPanel({
               onCreateTag={onCreateTag}
               activeHighlightId={activeHighlightId}
               isFocusTarget={flashDimensionId === entry.dimensionId}
+              onUpdateTagLinkComment={onUpdateTagLinkComment}
               ref={(node) => {
                 panelRefs.current[entry.dimensionId] = node;
               }}
