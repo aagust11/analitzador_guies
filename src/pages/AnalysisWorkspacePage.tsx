@@ -12,6 +12,7 @@ import {
 } from '../models';
 import { AnalysisSheetPanel } from '../components/analysis/AnalysisSheetPanel';
 import { PdfViewer } from '../components/analysis/PdfViewer';
+import { GuideMetadataPanel } from '../components/guides/GuideMetadataPanel';
 import { useStorage } from '../services/storage/StorageContext';
 import './PageStyles.css';
 import './AnalysisWorkspacePage.css';
@@ -440,6 +441,36 @@ export function AnalysisWorkspacePage() {
     }));
   };
 
+  const handleUpdateGuideMetadata = (
+    changes: Partial<{ title: string; institution?: string; year?: string }>,
+  ) => {
+    if (!guideId) {
+      return;
+    }
+    updateProjectState((state) => ({
+      ...state,
+      guides: state.guides.map((item) => {
+        if (item.id !== guideId) {
+          return item;
+        }
+        const nextTitle =
+          changes.title !== undefined ? changes.title.trim() || 'Guia sense títol' : item.title;
+        const nextInstitution =
+          changes.institution !== undefined
+            ? changes.institution?.trim() || undefined
+            : item.institution;
+        const nextYear = changes.year !== undefined ? changes.year?.trim() || undefined : item.year;
+        return {
+          ...item,
+          title: nextTitle,
+          institution: nextInstitution,
+          year: nextYear,
+          updatedAt: new Date().toISOString(),
+        };
+      }),
+    }));
+  };
+
   return (
     <section className="workspace">
       <div className="workspace__panel workspace__panel--viewer">
@@ -469,6 +500,7 @@ export function AnalysisWorkspacePage() {
         />
       </div>
       <div className="workspace__panel workspace__panel--sheet">
+        <GuideMetadataPanel guide={guide} onChange={handleUpdateGuideMetadata} />
         <AnalysisSheetPanel
           guideTitle={guide.title}
           sheetEntries={sheetDraft}

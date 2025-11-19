@@ -24,6 +24,12 @@ function generateGuideId(): string {
   return typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `guide-${Date.now()}`;
 }
 
+function deriveTitleFromFilename(filename: string): string {
+  const withoutExtension = filename.replace(/\.[^.]+$/, '');
+  const trimmed = withoutExtension.trim();
+  return trimmed || filename;
+}
+
 export function HomePage() {
   const { projectState, updateProjectState, storageService } = useStorage();
   const [isUploadOpen, setIsUploadOpen] = useState(false);
@@ -38,20 +44,11 @@ export function HomePage() {
     }));
   };
 
-  const handleUpload = async ({
-    file,
-    title,
-    institution,
-    year,
-  }: {
-    file: File;
-    title: string;
-    institution?: string;
-    year?: string;
-  }) => {
+  const handleUpload = async ({ file }: { file: File }) => {
     const fingerprint = await computeGuideFingerprint(file);
     const existingGuide = projectState.guides.find((guide) => guide.fingerprint === fingerprint);
     const guideId = existingGuide?.id ?? generateGuideId();
+    const title = deriveTitleFromFilename(file.name);
     await storageService.saveGuideFile(file, guideId);
     const now = new Date().toISOString();
     updateProjectState((prev) => {
@@ -64,8 +61,8 @@ export function HomePage() {
               ? {
                   ...guide,
                   title,
-                  institution,
-                  year,
+                  institution: undefined,
+                  year: undefined,
                   sourceFileName: file.name,
                   mimeType: file.type,
                   updatedAt: now,
@@ -84,8 +81,8 @@ export function HomePage() {
           {
             id: guideId,
             title,
-            institution,
-            year,
+            institution: undefined,
+            year: undefined,
             status: 'not_started' as GuideStatus,
             sourceFileName: file.name,
             storageFileName,
