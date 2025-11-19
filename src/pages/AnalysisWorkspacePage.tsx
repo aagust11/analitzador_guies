@@ -177,9 +177,14 @@ export function AnalysisWorkspacePage() {
     () =>
       sheetDraft.map((entry) => {
         const defaultTitle = DEFAULT_ANALYSIS_DIMENSIONS.find((dimension) => dimension.id === entry.dimensionId)?.title;
+        const normalizedTitle = entry.customTitle?.trim()
+          ? entry.customTitle.trim()
+          : entry.isCustomDimension
+            ? 'Dimensió emergent'
+            : defaultTitle ?? entry.dimensionId;
         return {
           id: entry.dimensionId,
-          title: entry.isCustomDimension ? entry.customTitle ?? 'Dimensió emergent' : defaultTitle ?? entry.dimensionId,
+          title: normalizedTitle,
         };
       }),
     [sheetDraft],
@@ -220,6 +225,19 @@ export function AnalysisWorkspacePage() {
         isCustomDimension: true,
       },
     ]);
+  };
+
+  const handleRenameDimension = (dimensionId: string, title: string) => {
+    setSheetDraft((prev) =>
+      prev.map((entry) =>
+        entry.dimensionId === dimensionId
+          ? {
+              ...entry,
+              customTitle: title.trim() || undefined,
+            }
+          : entry,
+      ),
+    );
   };
 
   const handleCreateHighlight = ({
@@ -460,6 +478,7 @@ export function AnalysisWorkspacePage() {
           onChangeNotes={handleChangeNotes}
           onAddCustomDimension={handleAddCustomDimension}
           onCreateTag={handleCreateTag}
+          onRenameDimension={handleRenameDimension}
           onSelectHighlight={handleSelectHighlight}
           activeHighlightId={activeHighlightId}
           focusedDimensionId={pendingFocusDimension}

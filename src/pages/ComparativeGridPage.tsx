@@ -50,17 +50,23 @@ export function ComparativeGridPage() {
   }, [projectState.guides]);
 
   const dimensionColumns = useMemo<DimensionColumn[]>(() => {
-    const defaults = DEFAULT_ANALYSIS_DIMENSIONS.map((dimension) => ({
-      id: dimension.id,
-      title: dimension.title,
-      isCustom: false,
-    }));
+    const overrideTitles = new Map<string, string>();
     const custom = new Map<string, string>();
     projectState.analysisSheets.forEach((sheet) => {
+      const trimmedTitle = sheet.customTitle?.trim();
       if (sheet.isCustomDimension) {
-        custom.set(sheet.dimensionId, sheet.customTitle ?? sheet.dimensionId);
+        custom.set(sheet.dimensionId, trimmedTitle || sheet.dimensionId);
+        return;
+      }
+      if (trimmedTitle) {
+        overrideTitles.set(sheet.dimensionId, trimmedTitle);
       }
     });
+    const defaults = DEFAULT_ANALYSIS_DIMENSIONS.map((dimension) => ({
+      id: dimension.id,
+      title: overrideTitles.get(dimension.id) ?? dimension.title,
+      isCustom: false,
+    }));
     const customColumns: DimensionColumn[] = Array.from(custom.entries())
       .map(([id, title]) => ({ id, title, isCustom: true }))
       .sort((a, b) => a.title.localeCompare(b.title));

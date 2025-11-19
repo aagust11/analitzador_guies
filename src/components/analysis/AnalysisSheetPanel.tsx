@@ -13,6 +13,7 @@ interface AnalysisSheetPanelProps {
   onChangeNotes: (dimensionId: string, field: DimensionNoteField, value: string) => void;
   onAddCustomDimension: (title: string) => void;
   onCreateTag: (dimensionId: string, label: string, color?: string) => void;
+  onRenameDimension: (dimensionId: string, title: string) => void;
   onSelectHighlight: (highlightId: string) => void;
   activeHighlightId?: string | null;
   focusedDimensionId?: string | null;
@@ -29,6 +30,7 @@ export function AnalysisSheetPanel({
   onChangeNotes,
   onAddCustomDimension,
   onCreateTag,
+  onRenameDimension,
   onSelectHighlight,
   activeHighlightId,
   focusedDimensionId,
@@ -102,6 +104,7 @@ export function AnalysisSheetPanel({
               onChange={onChangeNotes}
               onSelectHighlight={onSelectHighlight}
               onCreateTag={onCreateTag}
+              onRenameDimension={onRenameDimension}
               activeHighlightId={activeHighlightId}
               isFocusTarget={flashDimensionId === entry.dimensionId}
               onUpdateTagLinkComment={onUpdateTagLinkComment}
