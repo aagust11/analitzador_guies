@@ -35,6 +35,12 @@
   border-radius: 0.5rem;
 }
 
+.guide-upload__status {
+  color: #475569;
+  margin-top: 0.35rem;
+  font-size: 0.95rem;
+}
+
 .guide-upload__actions {
   display: flex;
   justify-content: flex-end;

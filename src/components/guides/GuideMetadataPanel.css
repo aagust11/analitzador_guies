@@ -1,0 +1,46 @@
+.guide-metadata {
+  margin-bottom: 1.5rem;
+  padding: 1rem 1.25rem;
+  background: linear-gradient(135deg, #eef2ff 0%, #f8fafc 100%);
+  border-radius: 0.75rem;
+  border: 1px solid #e2e8f0;
+}
+
+.guide-metadata__header {
+  margin-bottom: 0.75rem;
+}
+
+.guide-metadata__header h3 {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.guide-metadata__header p {
+  margin: 0.25rem 0 0;
+  color: #475569;
+  font-size: 0.95rem;
+}
+
+.guide-metadata__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 0.75rem;
+}
+
+.guide-metadata__field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.guide-metadata__field span {
+  color: #0f172a;
+  font-weight: 600;
+}
+
+.guide-metadata__field input {
+  padding: 0.6rem 0.75rem;
+  border: 1px solid #cbd5f5;
+  border-radius: 0.5rem;
+  background: #ffffff;
+}
