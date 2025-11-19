@@ -1,4 +1,4 @@
-import { forwardRef, useMemo, useState } from 'react';
+import { FormEvent, forwardRef, useEffect, useMemo, useState } from 'react';
 import { AnalysisSheet, Highlight, Tag } from '../../models';
 
 type DimensionNoteField = 'descriptive' | 'quotations' | 'interpretive';
@@ -17,6 +17,7 @@ interface DimensionPanelProps {
   activeHighlightId?: string | null;
   isFocusTarget?: boolean;
   onUpdateTagLinkComment: (tagId: string, linkId: string, comment: string) => void;
+  onRenameDimension: (dimensionId: string, title: string) => void;
 }
 
 export const DimensionPanel = forwardRef<HTMLElement, DimensionPanelProps>(function DimensionPanel(
@@ -34,12 +35,24 @@ export const DimensionPanel = forwardRef<HTMLElement, DimensionPanelProps>(funct
     activeHighlightId,
     isFocusTarget,
     onUpdateTagLinkComment,
+    onRenameDimension,
   },
   ref,
 ) {
-  const title = entry.isCustomDimension
-    ? entry.customTitle ?? 'Dimensió emergent'
-    : defaultTitle ?? entry.dimensionId;
+  const title = entry.customTitle?.trim()
+    ? entry.customTitle.trim()
+    : entry.isCustomDimension
+      ? 'Dimensió emergent'
+      : defaultTitle ?? entry.dimensionId;
+
+  const [isEditingTitle, setIsEditingTitle] = useState(false);
+  const [pendingTitle, setPendingTitle] = useState(title);
+
+  useEffect(() => {
+    if (!isEditingTitle) {
+      setPendingTitle(title);
+    }
+  }, [isEditingTitle, title]);
 
   const highlightItems = useMemo(
     () =>
@@ -76,6 +89,17 @@ export const DimensionPanel = forwardRef<HTMLElement, DimensionPanelProps>(funct
     setNewTagLabel('');
   };
 
+  const handleSubmitTitle = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    onRenameDimension(entry.dimensionId, pendingTitle);
+    setIsEditingTitle(false);
+  };
+
+  const handleCancelTitle = () => {
+    setPendingTitle(title);
+    setIsEditingTitle(false);
+  };
+
   return (
     <article
       className="dimension-panel"
@@ -84,17 +108,53 @@ export const DimensionPanel = forwardRef<HTMLElement, DimensionPanelProps>(funct
       ref={ref}
     >
       <header className="dimension-panel__header">
-        <button
-          type="button"
-          className="dimension-panel__toggle"
-          onClick={() => onToggleCollapse(entry.dimensionId)}
-          aria-expanded={!isCollapsed}
-        >
-          <span className="dimension-panel__chevron" aria-hidden="true">
-            {isCollapsed ? '▸' : '▾'}
-          </span>
-          <span className="dimension-panel__title">{title}</span>
-        </button>
+        <div className="dimension-panel__header-main">
+          <button
+            type="button"
+            className="dimension-panel__toggle"
+            onClick={() => onToggleCollapse(entry.dimensionId)}
+            aria-expanded={!isCollapsed}
+          >
+            <span className="dimension-panel__chevron" aria-hidden="true">
+              {isCollapsed ? '▸' : '▾'}
+            </span>
+            <span className="dimension-panel__title">{title}</span>
+          </button>
+          {!isEditingTitle ? (
+            <button
+              type="button"
+              className="dimension-panel__edit-button"
+              onClick={() => {
+                setPendingTitle(title);
+                setIsEditingTitle(true);
+              }}
+            >
+              Editar títol
+            </button>
+          ) : null}
+        </div>
+        {isEditingTitle ? (
+          <form className="dimension-panel__title-form" onSubmit={handleSubmitTitle}>
+            <label htmlFor={`dimension-title-${entry.dimensionId}`}>
+              Nom personalitzat de la dimensió
+            </label>
+            <input
+              id={`dimension-title-${entry.dimensionId}`}
+              type="text"
+              className="dimension-panel__title-input"
+              value={pendingTitle}
+              onChange={(event) => setPendingTitle(event.target.value)}
+              placeholder="Nom de la dimensió"
+              autoFocus
+            />
+            <div className="dimension-panel__title-form-actions">
+              <button type="button" onClick={handleCancelTitle}>
+                Cancel·lar
+              </button>
+              <button type="submit">Desar títol</button>
+            </div>
+          </form>
+        ) : null}
         {description ? <p className="dimension-panel__description">{description}</p> : null}
       </header>
       {!isCollapsed && (
