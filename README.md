@@ -22,7 +22,7 @@ Aplicació SPA en React + TypeScript que permet gestionar guies institucionals, 
 ## Desplegament a GitHub Pages
 
 1. Crea el repositori `USERNAME/ai-doc-analysis` (o un altre nom).
-2. Si uses un altre repositori, defineix `VITE_GITHUB_PAGES_BASE="/nom-del-repo/"` abans de compilar perquè `vite.config.ts` fixi el `base` correcte.
+2. Abans de compilar per desplegar a GitHub Pages, defineix `VITE_GITHUB_PAGES_BASE="/ai-doc-analysis/"` (o el camí del teu repositori) perquè `vite.config.ts` estableixi el `base` correcte; en desenvolupament es fa servir `/` per defecte.
 3. Executa `npm run deploy`. El comandament crea/actualitza la branca `gh-pages` mitjançant `git subtree push`.
 4. A GitHub, ves a **Settings → Pages** i tria la branca `gh-pages` com a origen.
 5. Cada cop que vulguis actualitzar la pàgina repeteix `npm run deploy` (cal tenir la branca `gh-pages` creada al remot `origin`).
